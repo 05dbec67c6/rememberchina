@@ -1,4 +1,4 @@
-package com.rememberchina.list
+package com.rememberchina.fragment_list
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -8,7 +8,7 @@ import com.rememberchina.network.ChinaEvent
 import com.rememberchina.network.ChinaEventApi
 import kotlinx.coroutines.launch
 
-
+enum class ChinaEventApiStatus { LOADING, ERROR, DONE }
 
 class ListViewModel : ViewModel() {
 
@@ -17,10 +17,11 @@ class ListViewModel : ViewModel() {
     val chinaEvents: LiveData<List<ChinaEvent>>
         get() = _chinaEvents
 
-    // The internal MutableLiveData String that stores the most recent response
-    private val _response = MutableLiveData<String>()
-    val response: LiveData<String>
-        get() = _response
+
+    // Loading Status
+    private val _status = MutableLiveData<ChinaEventApiStatus>()
+    val status: LiveData<ChinaEventApiStatus>
+        get() = _status
 
     init {
         getChinaEvents()
@@ -28,11 +29,15 @@ class ListViewModel : ViewModel() {
 
     private fun getChinaEvents() {
         viewModelScope.launch {
+
+            _status.value = ChinaEventApiStatus.LOADING
+
             try {
                 _chinaEvents.value = ChinaEventApi.retrofitService.getChinaEvents()
-                _response.value = "Success: China events retrieved"
+                _status.value = ChinaEventApiStatus.DONE
             } catch (e: Exception) {
-                _response.value = "Failure: ${e.message}"
+                _status.value = ChinaEventApiStatus.ERROR
+                _chinaEvents.value = ArrayList()
             }
         }
     }
